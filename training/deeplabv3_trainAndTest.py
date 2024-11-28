@@ -1,5 +1,7 @@
 # General libraries
 import os
+# Utilities
+import zipfile
 
 # PyTorch and PyTorch Lightning
 import torch.nn as nn
@@ -10,6 +12,7 @@ from data_loaders import SARDataModule
 # Image processing
 from PIL import Image
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
 # Scikit-learn
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
@@ -18,7 +21,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from torchvision.models.segmentation import (
     DeepLabV3_MobileNet_V3_Large_Weights, deeplabv3_mobilenet_v3_large)
-from pytorch_lightning.callbacks import ModelCheckpoint
+from utils import ZippingCheckpointCallback
 
 # ============================= TRAINING MODULE =============================
 
@@ -78,7 +81,6 @@ class SARSegmentationModel(LightningModule):
 
 # ============================= TRAINING LOOP =============================
 
-
 def main():
 
     data_module = SARDataModule(data_dir="dataset/", batch_size=8, val_split=0.15)
@@ -88,13 +90,30 @@ def main():
     # Create callback to save best checkpoint during training
     checkpoint_callback = ModelCheckpoint(monitor="val_iou", mode="max", save_top_k=1, filename="best-checkpoint")
 
+    zipping_callback = ZippingCheckpointCallback(checkpoint_callback=checkpoint_callback)
 
-    # , callbacks=checkpoint_callback
-    trainer = Trainer(max_epochs=10, devices=1, accelerator="gpu", callbacks=[checkpoint_callback])
+    # callbacks=checkpoint_callback
+    # Pass both callbacks to the trainer
+    trainer = Trainer(
+        max_epochs=10,
+        devices=1,
+        accelerator="gpu",
+        callbacks=[checkpoint_callback, zipping_callback]
+    )
+    
     trainer.fit(model, datamodule=data_module)
     # Load the best model
     best_model_path = checkpoint_callback.best_model_path
     best_model = SARSegmentationModel.load_from_checkpoint(best_model_path)
+
+# ============================= TEST =============================
+    
+    # Unzipping and loading the model for testing
+    with zipfile.ZipFile(best_model_path, 'r') as zipf:
+        zipf.extractall(os.path.dirname(best_model_path))
+        unzipped_path = best_model_path.replace('.zip', '')
+
+    best_model = SARSegmentationModel.load_from_checkpoint(unzipped_path)
 
     # Test the model
     trainer.test(best_model, datamodule=data_module)
