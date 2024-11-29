@@ -38,7 +38,7 @@ class SARSegmentationModel(LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.model = deeplabv3_mobilenet_v3_large(weights=DeepLabV3_MobileNet_V3_Large_Weights.DEFAULT)
+        self.model = deeplabv3_mobilenet_v3_large(weights=None)
         self.model.classifier[4] = nn.Conv2d(256, num_classes, kernel_size=1)
 
         self.criterion = nn.CrossEntropyLoss()
@@ -103,19 +103,19 @@ class SARSegmentationModel(LightningModule):
 
 def main():
 
-    data_module = SARDataModule(data_dir="dataset/", batch_size=8, val_split=0.15)
+    data_module = SARDataModule(data_dir="dataset/", batch_size=32, val_split=0.15)
 
-    model = SARSegmentationModel(learning_rate=5e-5, num_classes=5)
+    model = SARSegmentationModel(learning_rate=1e-3, num_classes=5)
     
     # Create callback to save best checkpoint during training
-    checkpoint_callback = ModelCheckpoint(monitor="val_mean_iou", mode="max", save_top_k=1, filename="best-checkpoint")
+    checkpoint_callback = ModelCheckpoint(monitor="val_iou_class_1", mode="max", save_top_k=1, filename="best-checkpoint")
 
     zipping_callback = ZippingCheckpointCallback(checkpoint_callback=checkpoint_callback)
 
     # callbacks=checkpoint_callback
     # Pass both callbacks to the trainer
     trainer = Trainer(
-        max_epochs=40,
+        max_epochs=50,
         devices=1,
         accelerator="gpu",
         callbacks=[checkpoint_callback, zipping_callback]

@@ -43,9 +43,9 @@ class SARDataModule(LightningDataModule):
         
         # Joint transformation for both image and mask
         self.joint_transform = ProbabilisticRandomizedFocusedCrop(
-            crop_transform=RandomizedFocusedCrop(crop_size=320, max_shift=20),
+            crop_transform=RandomizedFocusedCrop(crop_size=320, max_shift=40),
             crop_size=320,
-            probability=0.5
+            probability=1.0
         )
         
     def prepare_data(self) -> None:
