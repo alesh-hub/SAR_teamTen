@@ -1,5 +1,9 @@
 # General libraries
 import os
+import sys
+# Get the directory containing the current file and add it to Python's search path
+current_directory = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_directory)
 
 # Image processing
 from PIL import Image
@@ -10,7 +14,7 @@ from torch.utils.data import DataLoader, Dataset
 # PyTorch Vision
 from torchvision import transforms
 # SAR Tranformations
-from transformations import ProbabilisticRandomizedFocusedCrop, RandomizedFocusedCrop
+from custom_transforms import ProbabilisticRandomizedFocusedCrop, RandomizedFocusedCrop
 from torchvision.transforms import InterpolationMode
 
 class SARDataModule(LightningDataModule):
