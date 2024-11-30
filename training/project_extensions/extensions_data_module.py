@@ -68,7 +68,7 @@ class SARDataModule(LightningDataModule):
         # ----------------- TRAIN ----------------- 
         # Paths to the images and masks directories
         train_images_dir = os.path.join(self.data_dir, 'train/images')
-        train_masks_dir = os.path.join(self.data_dir, 'train/labels')
+        train_masks_dir = os.path.join(self.data_dir, 'train/labels_1D')
 
         # Get the list of image filenames
         train_images_filenames = get_sorted_file_names(train_images_dir)
@@ -84,7 +84,7 @@ class SARDataModule(LightningDataModule):
         # ----------------- TEST ----------------- 
         # Paths to the test dataset
         test_images_dir = os.path.join(self.data_dir, 'test/images')
-        test_masks_dir = os.path.join(self.data_dir, 'test/labels')
+        test_masks_dir = os.path.join(self.data_dir, 'test/labels_1D')
 
         # Get the list of test image filenames
         test_images_filenames = get_sorted_file_names(test_images_dir)

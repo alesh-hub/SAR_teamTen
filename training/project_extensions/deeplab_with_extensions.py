@@ -9,6 +9,7 @@ sys.path.append(current_directory)
 import zipfile
 
 # PyTorch and PyTorch Lightning
+import torch
 import torch.nn as nn
 # Metrics
 import torchmetrics
@@ -28,7 +29,7 @@ from torchvision.models.segmentation import (
 from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import ZippingCheckpointCallback
 
-
+CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
 
 
 # ============================= TRAINING MODULE =============================
@@ -41,7 +42,8 @@ class SARSegmentationModel(LightningModule):
         self.model = deeplabv3_mobilenet_v3_large(weights=None)
         self.model.classifier[4] = nn.Conv2d(256, num_classes, kernel_size=1)
 
-        self.criterion = nn.CrossEntropyLoss(weights= [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207])
+        class_weights_tensor = torch.tensor(CLASS_WEIGHTS_ARRAY, dtype=torch.float32)
+        self.criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
         self.learning_rate = learning_rate
 
         self.train_iou = torchmetrics.JaccardIndex(num_classes=num_classes, task="multiclass", average='none')
@@ -118,7 +120,8 @@ def main():
         max_epochs=50,
         devices=1,
         accelerator="gpu",
-        callbacks=[checkpoint_callback, zipping_callback]
+        callbacks=[checkpoint_callback, zipping_callback],
+        log_every_n_steps=10
     )
     
     trainer.fit(model, datamodule=data_module)
