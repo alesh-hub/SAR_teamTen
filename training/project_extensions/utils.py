@@ -1,6 +1,9 @@
 import os
 import zipfile
 
+import numpy as np
+import torch
+
 from pytorch_lightning import Callback
 from pytorch_lightning.callbacks import ModelCheckpoint
 

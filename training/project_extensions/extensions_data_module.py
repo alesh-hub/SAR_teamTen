@@ -5,9 +5,13 @@ import sys
 current_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_directory)
 
+# stats for dataset normalization (train set): 
+# Computed mean: 0.5185160303047751, std: 0.24470906979034782
+
 # Image processing
 from PIL import Image
 from pytorch_lightning import LightningDataModule
+
 # Scikit-learn
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
@@ -28,6 +32,7 @@ class SARDataModule(LightningDataModule):
         # Transformation for images
         self.image_transform = transforms.Compose([
             transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5185160303047751]*3, std=[0.24470906979034782]*3)
             # transforms.Resize((320, 320), interpolation=InterpolationMode.BILINEAR)
             # transforms.Lambda(lambda x: x[0, :, :].unsqueeze(0))  # Take the first channel
             # Augmentation TO DO
@@ -63,7 +68,7 @@ class SARDataModule(LightningDataModule):
         # ----------------- TRAIN ----------------- 
         # Paths to the images and masks directories
         train_images_dir = os.path.join(self.data_dir, 'train/images')
-        train_masks_dir = os.path.join(self.data_dir, 'train/labels_1D')
+        train_masks_dir = os.path.join(self.data_dir, 'train/labels')
 
         # Get the list of image filenames
         train_images_filenames = get_sorted_file_names(train_images_dir)
@@ -79,7 +84,7 @@ class SARDataModule(LightningDataModule):
         # ----------------- TEST ----------------- 
         # Paths to the test dataset
         test_images_dir = os.path.join(self.data_dir, 'test/images')
-        test_masks_dir = os.path.join(self.data_dir, 'test/labels_1D')
+        test_masks_dir = os.path.join(self.data_dir, 'test/labels')
 
         # Get the list of test image filenames
         test_images_filenames = get_sorted_file_names(test_images_dir)
@@ -93,7 +98,7 @@ class SARDataModule(LightningDataModule):
             self.train_dataset = SARImageDataset(
                 train_images_paths, train_masks_paths,
                 image_transform=self.image_transform, mask_transform=self.mask_transform, 
-                joint_transform=self.joint_transform
+                joint_transform=self.joint_transform,
             )
             self.val_dataset = SARImageDataset(
                 val_images_paths, val_masks_paths,
@@ -125,7 +130,7 @@ class SARImageDataset(Dataset): # Allows the user to apply a custom transformati
         self.image_transform = image_transform
         self.mask_transform = mask_transform
         self.joint_transform = joint_transform
-
+        
     def __len__(self):
         return len(self.images_paths)
 
@@ -149,11 +154,13 @@ class SARImageDataset(Dataset): # Allows the user to apply a custom transformati
                 img = self.image_transform(img)
             else:
                 img = transforms.ToTensor()(img)
-
+            
+            # Apply specified transformations and convert to tensor
             if self.mask_transform:
                 mask = self.mask_transform(mask)
-            else:
+            else: 
                 mask = transforms.ToTensor()(mask)
+            
 
             mask = mask.squeeze(0).long()
 

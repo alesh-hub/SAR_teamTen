@@ -41,7 +41,7 @@ class SARSegmentationModel(LightningModule):
         self.model = deeplabv3_mobilenet_v3_large(weights=None)
         self.model.classifier[4] = nn.Conv2d(256, num_classes, kernel_size=1)
 
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.CrossEntropyLoss(weights= [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207])
         self.learning_rate = learning_rate
 
         self.train_iou = torchmetrics.JaccardIndex(num_classes=num_classes, task="multiclass", average='none')
