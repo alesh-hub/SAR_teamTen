@@ -1,7 +1,7 @@
 import random
 import numpy as np
 from torchvision.transforms import functional as F
-
+import torch
 
 class ProbabilisticRandomizedFocusedCrop:
     def __init__(self, crop_transform, crop_size=320, probability=0.5):
@@ -96,3 +96,12 @@ class RandomizedFocusedCrop:
             mask = F.crop(mask, top, left, self.crop_size, self.crop_size)
 
         return image, mask
+    
+    
+    
+class MaskToTensor:
+    def __call__(self, mask):
+        # Converts mask to a PyTorch tensor with dtype=torch.int64
+        return torch.as_tensor(np.array(mask), dtype=torch.int64)
+
+

@@ -24,6 +24,5 @@ class ZippingCheckpointCallback(Callback):
             with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 zipf.write(checkpoint_path, arcname=os.path.basename(checkpoint_path))
             
-            # Optionally delete the original checkpoint to save space
-            os.remove(checkpoint_path)
-            print(f"Checkpoint compressed and saved at {zip_path}")
+            # Delete the original checkpoint to save space
+            os.remove(r'C:\Users\ale\Documents\GitHub\SAR_teamTen\lightning_logs\version_0\checkpoints\best-checkpoint.ckpt')

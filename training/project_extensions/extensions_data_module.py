@@ -1,6 +1,7 @@
 # General libraries
 import os
 import sys
+import numpy as np
 # Get the directory containing the current file and add it to Python's search path
 current_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_directory)
@@ -15,10 +16,11 @@ from pytorch_lightning import LightningDataModule
 # Scikit-learn
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
+import torch
 # PyTorch Vision
 from torchvision import transforms
 # SAR Tranformations
-from custom_transforms import ProbabilisticRandomizedFocusedCrop, RandomizedFocusedCrop
+import custom_transforms
 from torchvision.transforms import InterpolationMode
 
 class SARDataModule(LightningDataModule):
@@ -32,7 +34,7 @@ class SARDataModule(LightningDataModule):
         # Transformation for images
         self.image_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5185160303047751]*3, std=[0.24470906979034782]*3)
+            # transforms.Normalize(mean=[0.5185160303047751]*3, std=[0.24470906979034782]*3)
             # transforms.Resize((320, 320), interpolation=InterpolationMode.BILINEAR)
             # transforms.Lambda(lambda x: x[0, :, :].unsqueeze(0))  # Take the first channel
             # Augmentation TO DO
@@ -41,16 +43,16 @@ class SARDataModule(LightningDataModule):
 
         # Transformation for masks
         self.mask_transform = transforms.Compose([
-            transforms.ToTensor(),
+            custom_transforms.MaskToTensor(),
             # transforms.Resize((320, 320), interpolation=InterpolationMode.NEAREST)
             # No channel selection for masks
         ])
         
         # Joint transformation for both image and mask
-        self.joint_transform = ProbabilisticRandomizedFocusedCrop(
-            crop_transform=RandomizedFocusedCrop(crop_size=320, max_shift=40),
+        self.joint_transform = custom_transforms.ProbabilisticRandomizedFocusedCrop(
+            crop_transform=custom_transforms.RandomizedFocusedCrop(crop_size=320, max_shift=80),
             crop_size=320,
-            probability=1.0
+            probability=0.4
         )
         
     def prepare_data(self) -> None:
@@ -98,7 +100,7 @@ class SARDataModule(LightningDataModule):
             self.train_dataset = SARImageDataset(
                 train_images_paths, train_masks_paths,
                 image_transform=self.image_transform, mask_transform=self.mask_transform, 
-                joint_transform=self.joint_transform,
+                joint_transform=self.joint_transform
             )
             self.val_dataset = SARImageDataset(
                 val_images_paths, val_masks_paths,

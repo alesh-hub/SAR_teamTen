@@ -30,7 +30,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from utils import ZippingCheckpointCallback
 
 CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
-
+MODELS_DIR = r'C:\Users\ale\Documents\GitHub\SAR_teamTen\training\project_extensions\models'
 
 # ============================= TRAINING MODULE =============================
 
@@ -110,29 +110,39 @@ def main():
     model = SARSegmentationModel(learning_rate=1e-3, num_classes=5)
     
     # Create callback to save best checkpoint during training
-    checkpoint_callback = ModelCheckpoint(monitor="val_iou_class_1", mode="max", save_top_k=1, filename="best-checkpoint")
-
-    zipping_callback = ZippingCheckpointCallback(checkpoint_callback=checkpoint_callback)
+    checkpoint_callback = ModelCheckpoint(monitor="val_mean_iou", mode="max", save_top_k=1, filename="best-checkpoint")
 
     # callbacks=checkpoint_callback
     # Pass both callbacks to the trainer
     trainer = Trainer(
-        max_epochs=50,
+        max_epochs=600,
         devices=1,
         accelerator="gpu",
-        callbacks=[checkpoint_callback, zipping_callback],
-        log_every_n_steps=10
+        callbacks=[checkpoint_callback],
+        #log_every_n_steps=10
     )
     
     trainer.fit(model, datamodule=data_module)
     # Save the path of the best model
     best_model_path = checkpoint_callback.best_model_path
+    
+    if os.path.exists(best_model_path):
+        # Define the zip filename
+        zip_path = best_model_path + ".zip"
+            
+        # Compress the checkpoint
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(best_model_path, arcname=os.path.basename(best_model_path))
+        
+        # Delete the original checkpoint to save space
+        os.remove(best_model_path)
+        print('Final model saved and compressed!')
         
 # ============================= TEST =============================
 
-    with zipfile.ZipFile(best_model_path, 'r') as zipf:
-        zipf.extractall(os.path.dirname(best_model_path))
-        unzipped_path = best_model_path.replace('.zip', '')
+    with zipfile.ZipFile(zip_path, 'r') as zipf:
+        zipf.extractall(os.path.dirname(zip_path))
+        unzipped_path = zip_path.replace('.zip', '')
 
     best_model = SARSegmentationModel.load_from_checkpoint(unzipped_path)
     
