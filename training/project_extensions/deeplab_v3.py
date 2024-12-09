@@ -1,6 +1,7 @@
 # General libraries
 import os
 import sys
+
 # Get the directory containing the current file and add it to Python's search path
 current_directory = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_directory)
@@ -18,6 +19,7 @@ from extensions_data_module import SARDataModule
 # Image processing
 from PIL import Image
 from pytorch_lightning import LightningDataModule, LightningModule, Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
 # Scikit-learn
 from sklearn.model_selection import train_test_split
 from torch.optim import Adam
@@ -26,11 +28,8 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from torchvision.models.segmentation import (
     DeepLabV3_MobileNet_V3_Large_Weights, deeplabv3_mobilenet_v3_large)
-from pytorch_lightning.callbacks import ModelCheckpoint
-from utils import ZippingCheckpointCallback
 
 CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
-MODELS_DIR = r'C:\Users\ale\Documents\GitHub\SAR_teamTen\training\project_extensions\models'
 
 # ============================= TRAINING MODULE =============================
 
@@ -112,14 +111,12 @@ def main():
     # Create callback to save best checkpoint during training
     checkpoint_callback = ModelCheckpoint(monitor="val_mean_iou", mode="max", save_top_k=1, filename="best-checkpoint")
 
-    # callbacks=checkpoint_callback
-    # Pass both callbacks to the trainer
     trainer = Trainer(
         max_epochs=600,
         devices=1,
         accelerator="gpu",
         callbacks=[checkpoint_callback],
-        #log_every_n_steps=10
+        # log_every_n_steps=10
     )
     
     trainer.fit(model, datamodule=data_module)
