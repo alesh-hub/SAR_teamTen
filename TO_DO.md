@@ -4,52 +4,29 @@
 
 - create code lines to zip the best checkpoint at the end of training and then unzip during the evaluation mode.
 
-
 ## PAPER REPLICATION
 
-- transformations:
-    - resize 320 x 320
-    - random horizontal flip and/or random vertical flip
-    ```python
-    def augment_images(dataset_images):
-    augmented_images = []
+- fare data_module per paper replication -> RUNNARE SUBITO SENZA SPLIT + TUTTE AUGMENTATIONS + NO NORMALIZE:
+  - Con pesi classi already computed
+  - Con pesi smussati
+  - Senza pesi
+  
+- lightning module - TRAIN + Test
 
-    for image in dataset_images:
-        # Convert image to a PyTorch tensor if it's not already
-        if not isinstance(image, torch.Tensor):
-            image = T.ToTensor()(image)
-        
-        # Randomly decide whether to apply augmentation (50% chance)
-        if random.random() < 0.5:
-            # Step 1: Random flipping
-            flip_horizontal = random.random() < 0.5
-            flip_vertical = random.random() < 0.5
+### RUNS TO DO 
 
-            # Ensure at least one flip is applied
-            if not (flip_horizontal or flip_vertical):
-                if random.random() < 0.5:
-                    flip_horizontal = True
-                else:
-                    flip_vertical = True
+- DeepLab:
+  - 
 
-            # Apply the flips
-            if flip_horizontal:
-                image = F.hflip(image)
-            if flip_vertical:
-                image = F.vflip(image)
+## PROJECT EXTENSION
 
-            augmented_images.append(image)
-        else:
-            # Keep the original image if no augmentation is applied
-            augmented_images.append(image)
-    
-    return augmented_images
+- fixare commenti data_module
 
-    ``` 
-    - setting the crop to be random (p = 0.0)
+- 2nd version probabilistic focus crop:
+
+    - p + (p * labels present in image)
 
 ## To do in the repo:
-
 
 - create different folders for the training of each model, containing:
     - train/test file for paper preprocessing
