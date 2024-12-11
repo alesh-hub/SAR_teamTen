@@ -1,4 +1,3 @@
-
 # General libraries
 import os
 import sys
@@ -12,16 +11,14 @@ sys.path.append(current_directory)
 from PIL import Image
 from pytorch_lightning import LightningDataModule
 from torchvision.transforms import functional as F
-# Scikit-learn
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset
+# PyTorch
 import torch
+from torch.utils.data import DataLoader, Dataset, random_split
 # PyTorch Vision
 from torchvision import transforms
 # SAR Tranformations
 from torchvision.transforms import InterpolationMode
 
-import sys
 print(sys.modules)
 class MaskToTensor:
     def __call__(self, mask):
@@ -104,7 +101,6 @@ class RandomizedResize:
         new_height = int(image.height * scale_factor)
         print("Resizing by a factor of ", scale_factor)
 
-
         # Resize both the image and the mask
         image = F.resize(image, (new_height, new_width), interpolation=F.InterpolationMode.BILINEAR)
         mask = F.resize(mask, (new_height, new_width), interpolation=F.InterpolationMode.NEAREST)
@@ -139,6 +135,9 @@ class RandomizedCrop:
 
         return cropped_image, cropped_mask
 
+class ExtractFirstChannel:
+    def __call__(self, tensor):
+        return tensor[0:1, :, :]
 
 class SARDataModule(LightningDataModule):
     
@@ -151,7 +150,7 @@ class SARDataModule(LightningDataModule):
         # Transformation for images
         self.image_transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x[0:1, :, :])  # Keep only the first channel (C=1, H, W)
+            ExtractFirstChannel()
 
         ])
 
@@ -191,10 +190,14 @@ class SARDataModule(LightningDataModule):
         train_images_paths = [os.path.join(train_images_dir, f) for f in train_images_filenames]
         train_masks_paths = [os.path.join(train_masks_dir, os.path.splitext(f)[0] + '.png') for f in train_images_filenames]
 
-        # Split into train and validation sets
-        train_images_paths, val_images_paths, train_masks_paths, val_masks_paths = train_test_split(
-            train_images_paths, train_masks_paths, test_size=self.val_split, random_state=42)
-        
+        # Compute sizes for train and validation datasets
+        total_size = len(train_images_paths)
+        val_size = int(total_size * self.val_split)
+        train_size = total_size - val_size
+
+        # Split into train and validation sets using PyTorch
+        train_indices, val_indices = random_split(range(total_size), [train_size, val_size], generator=torch.Generator().manual_seed(42))
+
         # ----------------- TEST ----------------- 
         # Paths to the test dataset
         test_images_dir = os.path.join(self.data_dir, 'test/images')
@@ -210,12 +213,12 @@ class SARDataModule(LightningDataModule):
         # ----------------- LOADING ----------------- 
         if stage == "fit" or stage is None:
             self.train_dataset = SARImageDataset(
-                train_images_paths, train_masks_paths,
+                [train_images_paths[i] for i in train_indices], [train_masks_paths[i] for i in train_indices],
                 image_transform=self.image_transform, mask_transform=self.mask_transform, 
                 joint_transform=self.joint_transform
             )
             self.val_dataset = SARImageDataset(
-                val_images_paths, val_masks_paths,
+                [train_images_paths[i] for i in val_indices], [train_masks_paths[i] for i in val_indices],
                 image_transform=self.image_transform, mask_transform=self.mask_transform,
                 joint_transform=None
             )
@@ -227,13 +230,13 @@ class SARDataModule(LightningDataModule):
             )
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=16, shuffle=True, persistent_workers=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, persistent_workers=True)
     
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, num_workers=16, batch_size=self.batch_size, persistent_workers=True)
+        return DataLoader(self.val_dataset, num_workers=8, batch_size=self.batch_size, persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, num_workers=16, batch_size=self.batch_size, persistent_workers=True)
+        return DataLoader(self.test_dataset, num_workers=8, batch_size=self.batch_size, persistent_workers=True)
 
 class SARImageDataset(Dataset): # Allows the user to apply a custom transformation via self.mask_transform. 
 

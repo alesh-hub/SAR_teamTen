@@ -4,6 +4,8 @@
 
 - create code lines to zip the best checkpoint at the end of training and then unzip during the evaluation mode.
 
+- modifying the preprocessing functions to work with tensors and gpu
+
 ## PAPER REPLICATION
 
 - fare data_module per paper replication -> RUNNARE SUBITO SENZA SPLIT + TUTTE AUGMENTATIONS + NO NORMALIZE:
