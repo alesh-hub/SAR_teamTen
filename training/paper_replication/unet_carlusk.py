@@ -1,70 +1,97 @@
 # General libraries
 import os
 import sys
-
-import numpy as np
-import pytorch_lightning
-import segmentation_models_pytorch as smp
-
-# Get the directory containing the current file and add it to Python's search path
-current_directory = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(current_directory)
-
-# Utilities
 import zipfile
 
-# PyTorch and PyTorch Lightning
+# Numerical and machine learning libraries
+import numpy as np
+# PyTorch Lightning
+import pytorch_lightning
+# Segmentation Models PyTorch
+import segmentation_models_pytorch as smp
 import torch
 import torch.nn as nn
 # Metrics
 import torchmetrics
-# Image processing
-from PIL import Image
-from pytorch_lightning import LightningDataModule, LightningModule, Trainer
+from pytorch_lightning import LightningModule, Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
-# Scikit-learn
+# Optimizers
 from torch.optim import Adam
-from torch.utils.data import DataLoader, Dataset
-# PyTorch Vision
-from torchvision import transforms
 
-# Data Loaders
+# Data loading
 from training.paper_replication.replication_data_module_torch import \
     SARDataModule
-
-CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
 
 # ============================= TRAINING MODULE =============================
 
 class SARSegmentationModel(LightningModule):
+    """
+    A PyTorch Lightning module for SAR image semantic segmentation.
+
+    This model uses a U-Net architecture from the Segmentation Models PyTorch (smp) library,
+    with a ResNet101 encoder and class weights for handling imbalanced data.
+    """
+
     def __init__(self, learning_rate=5e-5, num_classes=5):
+        """
+        Initializes the SAR segmentation model.
+
+        Args:
+            learning_rate (float): Learning rate for the optimizer.
+            num_classes (int): Number of classes for segmentation.
+        """
         super().__init__()
         self.save_hyperparameters()
 
+        # Define the U-Net model
         self.model = smp.Unet(
-                                encoder_name="resnet101",        # choose encoder, e.g. mobilenet_v2 or efficientnet-b7
-                                encoder_weights=None,     # use `imagenet` pre-trained weights for encoder initialization
-                                in_channels=1,                  # model input channels (1 for gray-scale images, 3 for RGB, etc.)
-                                classes=5                      # model output channels (number of classes in your dataset)
-                                )
+            encoder_name="resnet101",       # Encoder type
+            encoder_weights=None,          # No pre-trained weights
+            in_channels=1,                 # Input channels (1 for SAR images)
+            classes=num_classes             # Output classes
+        )
 
+        # Define loss function with class weights
         class_weights_tensor = torch.tensor(CLASS_WEIGHTS_ARRAY, dtype=torch.float32)
         self.criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
+
+        # Define learning rate
         self.learning_rate = learning_rate
 
+        # Metrics for IoU (Intersection over Union)
         self.train_iou = torchmetrics.JaccardIndex(num_classes=num_classes, task="multiclass", average='none')
         self.val_iou = torchmetrics.JaccardIndex(num_classes=num_classes, task="multiclass", average='none')
 
     def forward(self, x):
+        """
+        Forward pass of the model.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Model output.
+        """
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
+        """
+        Training step for a single batch.
+
+        Args:
+            batch (tuple): A tuple containing images and masks.
+            batch_idx (int): Index of the batch.
+
+        Returns:
+            torch.Tensor: Training loss for the batch.
+        """
         images, masks = batch
         outputs = self(images)
         loss = self.criterion(outputs, masks.long())
         preds = outputs.argmax(dim=1)
         iou = self.train_iou(preds, masks)
 
+        # Log metrics
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         for class_idx, class_iou in enumerate(iou):
             self.log(f"train_iou_class_{class_idx}", class_iou, on_epoch=True, prog_bar=False)
@@ -73,18 +100,27 @@ class SARSegmentationModel(LightningModule):
             
         return loss
 
-
     def validation_step(self, batch, batch_idx):
+        """
+        Validation step for a single batch.
+
+        Args:
+            batch (tuple): A tuple containing images and masks.
+            batch_idx (int): Index of the batch.
+
+        Returns:
+            torch.Tensor: Validation loss for the batch.
+        """
         images, masks = batch
         outputs = self(images)
         loss = self.criterion(outputs, masks.long())
         preds = outputs.argmax(dim=1)
-        
-        # Slice preds and masks to the original size before padding
+
+        # Remove padding from predictions and masks
         preds = preds[:, :650, :1250]
         masks = masks[:, :650, :1250]
 
-        
+        # Compute IoU and log metrics
         iou = self.val_iou(preds, masks)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         for class_idx, class_iou in enumerate(iou):
@@ -93,14 +129,25 @@ class SARSegmentationModel(LightningModule):
         self.log("val_mean_iou", mean_iou, on_epoch=True, prog_bar=True)
 
         return loss
-    
+
     def test_step(self, batch, batch_idx):
+        """
+        Test step for a single batch.
+
+        Args:
+            batch (tuple): A tuple containing images and masks.
+            batch_idx (int): Index of the batch.
+
+        Returns:
+            torch.Tensor: Test loss for the batch.
+        """
         images, masks = batch
         outputs = self(images)
         loss = self.criterion(outputs, masks.long())
         preds = outputs.argmax(dim=1)
-        iou = self.val_iou(preds, masks)  # You can use a separate metric if you prefer
+        iou = self.val_iou(preds, masks)
 
+        # Log test metrics
         self.log("test_loss", loss, on_epoch=True, prog_bar=True)
         for class_idx, class_iou in enumerate(iou):
             self.log(f"test_iou_class_{class_idx}", class_iou, on_epoch=True, prog_bar=False)
@@ -110,47 +157,53 @@ class SARSegmentationModel(LightningModule):
         return loss
 
     def configure_optimizers(self):
+        """
+        Configures the optimizer.
+
+        Returns:
+            torch.optim.Optimizer: Adam optimizer.
+        """
         optimizer = Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
 # ============================= TRAINING LOOP =============================
 
-
 def main():
-
+    """
+    Main training loop for the SAR segmentation model.
+    """
+    # Initialize data module and model
     data_module = SARDataModule(data_dir="dataset/", batch_size=8, val_split=0.15)
-
     model = SARSegmentationModel(learning_rate=1e-3, num_classes=5)
     
-    # Create callback to save best checkpoint during training
-    checkpoint_callback = ModelCheckpoint(monitor="val_iou_class_1", mode="max", save_top_k=1, filename="best-checkpoint")
+    # Define a callback to save the best checkpoint
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_iou_class_1", mode="max", save_top_k=1, filename="best-checkpoint"
+    )
 
+    # Trainer configuration
     trainer = Trainer(
         max_epochs=600,
         devices=1,
         accelerator="gpu",
-        callbacks=[checkpoint_callback],
-        # log_every_n_steps=10
+        callbacks=[checkpoint_callback]
     )
     
+    # Train the model
     trainer.fit(model, datamodule=data_module)
-    # Save the path of the best model
+
+    # Save the best model as a compressed zip file
     best_model_path = checkpoint_callback.best_model_path
-    
     if os.path.exists(best_model_path):
-        # Define the zip filename
         zip_path = best_model_path + ".zip"
-            
-        # Compress the checkpoint
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.write(best_model_path, arcname=os.path.basename(best_model_path))
-        
-        # Delete the original checkpoint to save space
         os.remove(best_model_path)
         print('Final model saved and compressed!')
-        
-# ============================= TEST =============================
 
+    # ============================= TEST =============================
+
+    # Load the best model from the compressed file
     with zipfile.ZipFile(zip_path, 'r') as zipf:
         zipf.extractall(os.path.dirname(zip_path))
         unzipped_path = zip_path.replace('.zip', '')

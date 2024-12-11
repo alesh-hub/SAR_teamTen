@@ -6,6 +6,8 @@
 
 - modifying the preprocessing functions to work with tensors and gpu
 
+### Idea: keep each model in paper_replication and project_extension, create "backbone" folder in both to keep data_module, and custom_transforms
+
 ## PAPER REPLICATION
 
 - fare data_module per paper replication -> RUNNARE SUBITO SENZA SPLIT + TUTTE AUGMENTATIONS + NO NORMALIZE:
