@@ -145,7 +145,7 @@ class SARDataModule(LightningDataModule):
         Returns:
             DataLoader: DataLoader for the training set.
         """
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=8, shuffle=True, persistent_workers=True)
+        return DataLoader(self.train_dataset, batch_size=self.batch_size, num_workers=20, shuffle=True, persistent_workers=True)
     
     def val_dataloader(self):
         """
@@ -154,7 +154,7 @@ class SARDataModule(LightningDataModule):
         Returns:
             DataLoader: DataLoader for the validation set.
         """
-        return DataLoader(self.val_dataset, num_workers=8, batch_size=self.batch_size, persistent_workers=True)
+        return DataLoader(self.val_dataset, num_workers=20, batch_size=self.batch_size, persistent_workers=True)
 
     def test_dataloader(self):
         """
@@ -163,7 +163,7 @@ class SARDataModule(LightningDataModule):
         Returns:
             DataLoader: DataLoader for the test set.
         """
-        return DataLoader(self.test_dataset, num_workers=8, batch_size=self.batch_size, persistent_workers=True)
+        return DataLoader(self.test_dataset, num_workers=20, batch_size=self.batch_size, persistent_workers=True)
 
 
 class SARImageDataset(Dataset):
