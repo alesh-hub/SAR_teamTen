@@ -56,7 +56,7 @@ class SARSegmentationModel(LightningModule):
         self.val_iou = torchmetrics.JaccardIndex(num_classes=num_classes, task="multiclass", average='none')
 
     def forward(self, x):
-        return self.model(x)["out"]
+        return self.model(x)
 
     def training_step(self, batch, batch_idx):
         images, masks = batch
@@ -73,11 +73,18 @@ class SARSegmentationModel(LightningModule):
             
         return loss
 
+
     def validation_step(self, batch, batch_idx):
         images, masks = batch
         outputs = self(images)
         loss = self.criterion(outputs, masks.long())
         preds = outputs.argmax(dim=1)
+        
+        # Slice preds and masks to the original size before padding
+        preds = preds[:, :650, :1250]
+        masks = masks[:, :650, :1250]
+
+        
         iou = self.val_iou(preds, masks)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         for class_idx, class_iou in enumerate(iou):

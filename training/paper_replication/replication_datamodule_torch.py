@@ -19,7 +19,6 @@ from torchvision import transforms
 # SAR Tranformations
 from torchvision.transforms import InterpolationMode
 
-print(sys.modules)
 class MaskToTensor:
     def __call__(self, mask):
         # Converts mask to a PyTorch tensor with dtype=torch.int64
@@ -91,21 +90,18 @@ class RandomizedResize:
         """
         # Generate a random scale factor within the scale range
         scale_factor = random.uniform(*self.scale_range)
-        print(scale_factor)
         
-        print("Original Image Size: ", image.size)
-        print("Origina Mask Size: ", mask.size)
+        
+        
 
         # Compute new dimensions
         new_width = int(image.width * scale_factor)
         new_height = int(image.height * scale_factor)
-        print("Resizing by a factor of ", scale_factor)
+        
 
         # Resize both the image and the mask
         image = F.resize(image, (new_height, new_width), interpolation=F.InterpolationMode.BILINEAR)
         mask = F.resize(mask, (new_height, new_width), interpolation=F.InterpolationMode.NEAREST)
-        print("New Image Size: ", image.size)
-        print("New Mask Size: ", mask.size)
         return image, mask
 
 class RandomizedCrop:
@@ -139,6 +135,17 @@ class ExtractFirstChannel:
     def __call__(self, tensor):
         return tensor[0:1, :, :]
 
+class JointCompose:
+    def __init__(self, transforms_list):
+        self.transforms = transforms_list
+
+    def __call__(self, image, mask):
+        for t in self.transforms:
+            image, mask = t(image, mask)
+        return image, mask
+
+
+
 class SARDataModule(LightningDataModule):
     
     def __init__(self, data_dir: str = "./", batch_size: int = 8, val_split: float = 0.2):
@@ -156,15 +163,34 @@ class SARDataModule(LightningDataModule):
 
         # Transformation for masks
         self.mask_transform = transforms.Compose([
-            MaskToTensor()
+            MaskToTensor(),
+            
+        ])
+        
+        # Transformation for images
+        self.image_transform_val = transforms.Compose([
+            transforms.ToTensor(),
+            ExtractFirstChannel(),
+            transforms.Pad((0, 0, 30, 22), fill=0)
+
+        ])
+
+        # Transformation for masks
+        self.mask_transform_val = transforms.Compose([
+            MaskToTensor(),
+            transforms.Pad((0, 0, 30, 22), fill=0)
+            
         ])
         
         # Joint transformation for both image and mask
-        self.joint_transform = transforms.Compose([
+        self.joint_transform = JointCompose([
             RandomizedResize(),
             RandomizedFlip(),
             RandomizedCrop()
         ])
+
+        
+        
         
     def prepare_data(self) -> None:
         # Not needed in our case, no download or labelling needed
@@ -219,13 +245,13 @@ class SARDataModule(LightningDataModule):
             )
             self.val_dataset = SARImageDataset(
                 [train_images_paths[i] for i in val_indices], [train_masks_paths[i] for i in val_indices],
-                image_transform=self.image_transform, mask_transform=self.mask_transform,
+                image_transform=self.image_transform_val, mask_transform=self.mask_transform_val,
                 joint_transform=None
             )
         if stage == "test" or stage is None:
             self.test_dataset = SARImageDataset(
                 test_images_paths, test_masks_paths,
-                image_transform=self.image_transform, mask_transform=self.mask_transform,
+                image_transform=self.image_transform_val, mask_transform=self.mask_transform_val,
                 joint_transform=None
             )
 
