@@ -26,7 +26,7 @@ from replication_data_module_dict import SARDataModule
 
 CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
 
-CLASS_WEIGHTS_SMOOTH = [1, 5, 2, 20, 2]
+CLASS_WEIGHTS_SMOOTH = [1, 9, 3, 9, 3]
 # ============================= TRAINING MODULE =============================
 
 class SARSegmentationModel(LightningModule):
@@ -57,7 +57,7 @@ class SARSegmentationModel(LightningModule):
         )
 
         # Define loss function with class weights
-        class_weights_tensor = torch.tensor(CLASS_WEIGHTS_ARRAY, dtype=torch.float32)
+        class_weights_tensor = torch.tensor(CLASS_WEIGHTS_SMOOTH, dtype=torch.float32)
         self.criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
 
         # Define learning rate
@@ -177,7 +177,7 @@ def main():
     """
     Main training loop for the SAR segmentation model.
     """
-    num_epochs = 600
+    num_epochs = 60
     batch = 36
     
     
