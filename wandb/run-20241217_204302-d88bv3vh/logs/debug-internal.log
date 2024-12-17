@@ -1,0 +1,16 @@
+{"time":"2024-12-17T20:43:02.7437989+01:00","level":"INFO","msg":"using version","core version":"0.19.1"}
+{"time":"2024-12-17T20:43:02.7437989+01:00","level":"INFO","msg":"created symlink","path":"wandb\\run-20241217_204302-d88bv3vh\\logs\\debug-core.log"}
+{"time":"2024-12-17T20:43:02.8606309+01:00","level":"INFO","msg":"created new stream","id":"d88bv3vh"}
+{"time":"2024-12-17T20:43:02.8606309+01:00","level":"INFO","msg":"stream: started","id":"d88bv3vh"}
+{"time":"2024-12-17T20:43:02.8606309+01:00","level":"INFO","msg":"writer: Do: started","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T20:43:02.8606309+01:00","level":"INFO","msg":"handler: started","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T20:43:02.8606309+01:00","level":"INFO","msg":"sender: started","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T20:43:03.3359159+01:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-17T21:42:51.6994737+01:00","level":"INFO","msg":"stream: closing","id":"d88bv3vh"}
+{"time":"2024-12-17T21:42:51.6994737+01:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-17T21:42:51.700224+01:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-17T21:42:52.2999193+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-12-17T21:42:52.4920154+01:00","level":"INFO","msg":"handler: closed","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T21:42:52.4920154+01:00","level":"INFO","msg":"sender: closed","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T21:42:52.4920154+01:00","level":"INFO","msg":"writer: Close: closed","stream_id":"d88bv3vh"}
+{"time":"2024-12-17T21:42:52.4920154+01:00","level":"INFO","msg":"stream: closed","id":"d88bv3vh"}

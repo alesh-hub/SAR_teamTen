@@ -3,14 +3,19 @@ import os
 import sys
 import zipfile
 import time
-
+# Weights and Biases
+from pytorch_lightning.loggers import WandbLogger
+import wandb
 # Numerical and machine learning libraries
 import numpy as np
+# Utils
+from utils import save_prediction_images
 # PyTorch Lightning
 import pytorch_lightning
 # Segmentation Models PyTorch
 import segmentation_models_pytorch as smp
 import torch
+
 import torch.nn as nn
 # Metrics
 import torchmetrics
@@ -18,15 +23,23 @@ from pytorch_lightning import LightningModule, Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 # Optimizers
 from torch.optim import Adam
-
 # Data loading
 from replication_data_module_dict import SARDataModule
 
+# Speed up computation
+torch.set_float32_matmul_precision('medium')
 
+# Initialize W&B logger
+wandb_logger = WandbLogger(
+    project='SAR_ADSP_2425', 
+    name='deeplab_clutch'
+)
 
 CLASS_WEIGHTS_ARRAY = [1.135639, 99.380251, 17.762885, 2347.162359, 18.992207]
 
-CLASS_WEIGHTS_SMOOTH = [1, 9, 3, 9, 3]
+CLASS_WEIGHTS_SMOOTH = [1, 15, 3, 9, 3]
+
+CLASS_WEIGHTS_FOCUSED = [1, 2, 1, 4, 1]
 # ============================= TRAINING MODULE =============================
 
 class SARSegmentationModel(LightningModule):
@@ -47,6 +60,7 @@ class SARSegmentationModel(LightningModule):
         """
         super().__init__()
         self.save_hyperparameters()
+        self.result_counter = 1
 
         # Define the DeeplabV3+ model with MobilenetV3 as the encoder
         self.model = smp.DeepLabV3Plus(
@@ -57,7 +71,7 @@ class SARSegmentationModel(LightningModule):
         )
 
         # Define loss function with class weights
-        class_weights_tensor = torch.tensor(CLASS_WEIGHTS_SMOOTH, dtype=torch.float32)
+        class_weights_tensor = torch.tensor(CLASS_WEIGHTS_FOCUSED, dtype=torch.float32)
         self.criterion = nn.CrossEntropyLoss(weight=class_weights_tensor)
 
         # Define learning rate
@@ -150,6 +164,11 @@ class SARSegmentationModel(LightningModule):
         outputs = self(images)
         loss = self.criterion(outputs, masks.long())
         preds = outputs.argmax(dim=1)
+        
+        # Remove padding from predictions and masks
+        preds = preds[:, :650, :1250]
+        masks = masks[:, :650, :1250]
+        
         iou = self.val_iou(preds, masks)
 
         # Log test metrics
@@ -158,6 +177,8 @@ class SARSegmentationModel(LightningModule):
             self.log(f"test_iou_class_{class_idx}", class_iou, on_epoch=True, prog_bar=False)
         mean_iou = iou.mean()
         self.log("test_mean_iou", mean_iou, on_epoch=True, prog_bar=True)
+        
+        self.result_counter = save_prediction_images(masks, preds, counter=self.result_counter, result_folder='Deeplab_Fweights')
 
         return loss
 
@@ -177,13 +198,12 @@ def main():
     """
     Main training loop for the SAR segmentation model.
     """
-    num_epochs = 60
+    num_epochs = 600
     batch = 36
-    
     
     # Initialize data module and model
     data_module = SARDataModule(data_dir="dataset/", batch_size=batch, val_split=0.15)
-    model = SARSegmentationModel(learning_rate=1e-3, num_classes=5)
+    model = SARSegmentationModel(learning_rate=1e-4, num_classes=5)
     
     # Define a callback to save the best checkpoint
     checkpoint_callback = ModelCheckpoint(
@@ -193,6 +213,7 @@ def main():
     # Trainer configuration
     
     trainer = Trainer(
+        logger=wandb_logger,
         max_epochs=num_epochs,
         devices=1,
         accelerator="gpu",

@@ -58,11 +58,11 @@ class SARDataModule(LightningDataModule):
                 "image": transforms.Compose([
                     transforms.ToTensor(),
                     ExtractFirstChannel(),
-                    transforms.Pad((0, 0, 30, 22), fill=0)
+                    transforms.Pad((0, 0, 30, 22), padding_mode='reflect')
                 ]),
                 "mask": transforms.Compose([
                     MaskToTensor(),
-                    transforms.Pad((0, 0, 30, 22), fill=0)
+                    transforms.Pad((0, 0, 30, 22), padding_mode='reflect')
                 ]),
                 "joint": None
             }

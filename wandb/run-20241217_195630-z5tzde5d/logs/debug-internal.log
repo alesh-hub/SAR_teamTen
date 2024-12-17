@@ -1,0 +1,16 @@
+{"time":"2024-12-17T19:56:30.9169842+01:00","level":"INFO","msg":"using version","core version":"0.19.1"}
+{"time":"2024-12-17T19:56:30.9169842+01:00","level":"INFO","msg":"created symlink","path":"wandb\\run-20241217_195630-z5tzde5d\\logs\\debug-core.log"}
+{"time":"2024-12-17T19:56:31.0280877+01:00","level":"INFO","msg":"created new stream","id":"z5tzde5d"}
+{"time":"2024-12-17T19:56:31.0280877+01:00","level":"INFO","msg":"stream: started","id":"z5tzde5d"}
+{"time":"2024-12-17T19:56:31.0283209+01:00","level":"INFO","msg":"writer: Do: started","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T19:56:31.0283209+01:00","level":"INFO","msg":"sender: started","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T19:56:31.0283209+01:00","level":"INFO","msg":"handler: started","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T19:56:31.5390302+01:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2024-12-17T20:16:48.7460524+01:00","level":"INFO","msg":"stream: closing","id":"z5tzde5d"}
+{"time":"2024-12-17T20:16:48.7460524+01:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2024-12-17T20:16:48.7460524+01:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2024-12-17T20:16:49.5093866+01:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2024-12-17T20:16:49.7055162+01:00","level":"INFO","msg":"handler: closed","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T20:16:49.7055162+01:00","level":"INFO","msg":"writer: Close: closed","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T20:16:49.7055162+01:00","level":"INFO","msg":"sender: closed","stream_id":"z5tzde5d"}
+{"time":"2024-12-17T20:16:49.7055162+01:00","level":"INFO","msg":"stream: closed","id":"z5tzde5d"}

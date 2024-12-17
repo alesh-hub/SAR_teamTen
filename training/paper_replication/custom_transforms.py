@@ -62,12 +62,13 @@ class RandomizedFlip:
 
 
 class RandomizedResize:
-    def __init__(self, scale_range=(0.5, 1.5)):
+    def __init__(self, scale_range=(0.5, 1.5), resize_probability=0.5):
         """
         Args:
             scale_range (tuple): A tuple specifying the min and max scale factors (default: (0.5, 1.5)).
         """
         self.scale_range = scale_range
+        self.resize_probability = resize_probability
 
     def __call__(self, image, mask):
         """
@@ -80,16 +81,19 @@ class RandomizedResize:
         Returns:
             (PIL Image, PIL Image): The resized image and mask.
         """
-        # Generate a random scale factor within the scale range
-        scale_factor = random.uniform(*self.scale_range)
+        if random.random() < self.resize_probability:
+            # Generate a random scale factor within the scale range
+            scale_factor = random.uniform(*self.scale_range)
 
-        # Compute new dimensions
-        new_width = int(image.width * scale_factor)
-        new_height = int(image.height * scale_factor)
+            # Compute new dimensions
+            new_width = int(image.width * scale_factor)
+            new_height = int(image.height * scale_factor)
 
-        # Resize both the image and the mask
-        image = F.resize(image, (new_height, new_width), interpolation=F.InterpolationMode.BILINEAR)
-        mask = F.resize(mask, (new_height, new_width), interpolation=F.InterpolationMode.NEAREST)
+            # Resize both the image and the mask
+            image = F.resize(image, (new_height, new_width), interpolation=F.InterpolationMode.BILINEAR)
+            mask = F.resize(mask, (new_height, new_width), interpolation=F.InterpolationMode.NEAREST)
+            return image, mask
+        
         return image, mask
 
 

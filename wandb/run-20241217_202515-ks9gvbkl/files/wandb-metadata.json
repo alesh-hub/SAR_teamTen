@@ -1,0 +1,42 @@
+{
+  "os":  "Windows-10-10.0.22631-SP0",
+  "python":  "CPython 3.11.11",
+  "startedAt":  "2024-12-17T19:25:15.011051Z",
+  "program":  "c:\\Users\\ale\\Documents\\GitHub\\SAR_teamTen\\training\\paper_replication\\deeplab_v3.py",
+  "codePath":  "training\\paper_replication\\deeplab_v3.py",
+  "git":  {
+    "remote":  "https://github.com/alesh-hub/SAR_teamTen.git",
+    "commit":  "4ce02280a076008c4054920b8e29bbc660081cfc"
+  },
+  "email":  "a.valenti00@gmail.com",
+  "root":  ".",
+  "host":  "skynet",
+  "executable":  "C:\\Users\\ale\\anaconda3\\envs\\SAR_env\\python.exe",
+  "codePathLocal":  "training\\paper_replication\\deeplab_v3.py",
+  "cpu_count":  20,
+  "cpu_count_logical":  28,
+  "gpu":  "NVIDIA GeForce RTX 4080 SUPER",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "2000276156416",
+      "used":  "785336995840"
+    }
+  },
+  "memory":  {
+    "total":  "68542418944"
+  },
+  "cpu":  {
+    "count":  20,
+    "countLogical":  28
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 4080 SUPER",
+      "memoryTotal":  "17171480576",
+      "cudaCores":  10240,
+      "architecture":  "Ada"
+    }
+  ],
+  "cudaVersion":  "12.6"
+}
